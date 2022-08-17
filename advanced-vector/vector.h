@@ -6,7 +6,7 @@
 #include <utility>
 #include <memory>
 
-#define ISNOTHROWMOVEORCOPYCTOR std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>
+#define IS_NO_THROW_MOVE_OR_COPY_CTOR std::is_nothrow_move_constructible_v<T> || !std::is_copy_constructible_v<T>
 
 template <typename T>
 class RawMemory
@@ -264,34 +264,12 @@ public:
 
 	void PushBack(const T& value)
 	{
-		if (size_ == Capacity())
-		{
-			RawMemory<T> new_data(size_ == 0 ? 1 : size_ * 2);
-			std::uninitialized_copy_n(&value, 1, new_data.GetAddress() + size_);
-			MoveDataTo(new_data);
-		}
-		else
-		{
-			std::uninitialized_copy_n(&value, 1, data_.GetAddress() + size_);
-		}
-
-		++size_;
+        EmplaceBack(value);
 	}
 
 	void PushBack(T&& value)
 	{
-		if (size_ == Capacity())
-		{
-			RawMemory<T> new_data(size_ == 0 ? 1 : size_ * 2);
-			std::uninitialized_move_n(&value, 1, new_data.GetAddress() + size_);
-			MoveDataTo(new_data);
-		}
-		else
-		{
-			std::uninitialized_move_n(&value, 1, data_.GetAddress() + size_);
-		}
-
-		++size_;
+        EmplaceBack(std::move(value));
 	}
 
 	void PopBack() noexcept
@@ -353,7 +331,7 @@ public:
 private:
 	void MoveDataTo(RawMemory<T>& new_data)
 	{
-		if constexpr (ISNOTHROWMOVEORCOPYCTOR)
+		if constexpr (IS_NO_THROW_MOVE_OR_COPY_CTOR)
 		{
 			std::uninitialized_move_n(data_.GetAddress(), size_, new_data.GetAddress());
 		}
@@ -373,7 +351,7 @@ private:
 	template <class InputIt, class NoThrowForwardIt>
 	void MoveData(InputIt first, InputIt last, NoThrowForwardIt d_first)
 	{
-		if constexpr (ISNOTHROWMOVEORCOPYCTOR)
+		if constexpr (IS_NO_THROW_MOVE_OR_COPY_CTOR)
 		{
 			std::uninitialized_move(first, last, d_first);
 		}
